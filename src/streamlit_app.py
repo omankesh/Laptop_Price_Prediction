@@ -82,14 +82,21 @@ expected_order = ['Company', 'TypeName', 'Ram', 'Weight', 'Cpu_type',
                   'Touchscreen', 'IPS', 'ppi', 'HDD', 'SSD', 'Gpu_type', 'OS']
 X_scaled = X_scaled[expected_order]
 
-# Predict
-model_choice = st.radio("Choose Model", ["Gradient Boosting", "LightGBM"])
+# Model selection
+model_choice = st.radio("Choose Model", ["Gradient Boosting", "LightGBM", "Ensemble (Avg)"])
+
 if st.button("Predict Price"):
     try:
         if model_choice == "Gradient Boosting":
             log_price = xgb_model.predict(X_scaled)[0]
-        else:
+
+        elif model_choice == "LightGBM":
             log_price = lgbm_model.predict(X_scaled)[0]
+
+        else:  # Ensemble
+            log_price_gb = xgb_model.predict(X_scaled)[0]
+            log_price_lgbm = lgbm_model.predict(X_scaled)[0]
+            log_price = (log_price_gb + log_price_lgbm) / 2  # Average the log prices
 
         predicted_price = np.exp(log_price)
         st.success(f"💻 Estimated Laptop Price: ₹{int(predicted_price)}")
