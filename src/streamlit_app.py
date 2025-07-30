@@ -61,7 +61,7 @@ res_label = st.selectbox('Screen Resolution', {
 })
 res_width, res_height = res_label
 ppi_value = round((res_width**2 + res_height**2) ** 0.5 / screen_size, 2)
-st.caption(f"🔍 **Calculated PPI**: {ppi_value} based on resolution {res_width}x{res_height} and screen size {screen_size}".")
+st.caption(f"🔍 **Calculated PPI**: {ppi_value} based on resolution {res_width}x{res_height} and screen size {screen_size}")
 
 # Prepare Input Data
 input_dict = {
