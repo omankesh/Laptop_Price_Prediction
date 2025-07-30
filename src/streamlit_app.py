@@ -77,13 +77,21 @@ X_scaled = query.copy()
 X_scaled[["Ram", "Weight", "ppi", "HDD", "SSD"]] = scaler.transform(
     query[["Ram", "Weight", "ppi", "HDD", "SSD"]])
 
+# Reorder columns to match training
+expected_order = ['Company', 'TypeName', 'Ram', 'Weight', 'Cpu_type',
+                  'Touchscreen', 'Ips', 'ppi', 'HDD', 'SSD', 'Gpu_type', 'OS']
+X_scaled = X_scaled[expected_order]
+
 # Predict
 model_choice = st.radio("Choose Model", ["Gradient Boosting", "LightGBM"])
 if st.button("Predict Price"):
-    if model_choice == "Gradient Boosting":
-        log_price = xgb_model.predict(X_scaled)[0]
-    else:
-        log_price = lgbm_model.predict(X_scaled)[0]
-    
-    predicted_price = np.exp(log_price)
-    st.success(f"Estimated Laptop Price: ₹{int(predicted_price)}")
+    try:
+        if model_choice == "Gradient Boosting":
+            log_price = xgb_model.predict(X_scaled)[0]
+        else:
+            log_price = lgbm_model.predict(X_scaled)[0]
+
+        predicted_price = np.exp(log_price)
+        st.success(f"💻 Estimated Laptop Price: ₹{int(predicted_price)}")
+    except Exception as e:
+        st.error(f"❌ Prediction failed: {e}")
