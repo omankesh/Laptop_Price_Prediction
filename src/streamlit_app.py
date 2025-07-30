@@ -81,9 +81,9 @@ X_scaled[["Ram", "Weight", "ppi", "HDD", "SSD"]] = scaler.transform(
 model_choice = st.radio("Choose Model", ["Gradient Boosting", "LightGBM"])
 if st.button("Predict Price"):
     if model_choice == "Gradient Boosting":
-        log_price = gb_model.predict(X_scaled)[0]
+        log_price = xgb_mode.predict(X_scaled)[0]
     else:
-        log_price = lgb_model.predict(X_scaled)[0]
+        log_price = lgbm_model.predict(X_scaled)[0]
     
     predicted_price = np.exp(log_price)
     st.success(f"Estimated Laptop Price: ₹{int(predicted_price)}")
