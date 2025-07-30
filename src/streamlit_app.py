@@ -34,7 +34,7 @@ except FileNotFoundError as e:
 
 # Streamlit App UI
 st.set_page_config(page_title="Laptop Price Predictor", page_icon="💻")
-st.title("💻 Laptop Price Predictor (Ensemble Model)")
+st.title("💻 Laptop Price Predictor")
 st.markdown("Predict laptop prices using XGBoost and LightGBM models.")
 
 # User Input
@@ -53,13 +53,18 @@ os = st.selectbox('Operating System', label_encoders['OS'].classes_)
 # Display Details
 st.markdown("### 📺 Display Details (PPI Auto Calculated)")
 screen_size = st.selectbox('Screen Size (inches)', [13.3, 14.0, 15.6, 16.0, 17.3])
-res_label = st.selectbox('Screen Resolution', {
+
+# ✅ FIXED: Resolution selection
+resolution_options = {
     'HD (1366x768)': (1366, 768),
     'Full HD (1920x1080)': (1920, 1080),
     '2K (2560x1440)': (2560, 1440),
     '4K (3840x2160)': (3840, 2160)
-})
-res_width, res_height = res_label
+}
+selected_label = st.selectbox('Screen Resolution', list(resolution_options.keys()))
+res_width, res_height = resolution_options[selected_label]
+
+# Calculate PPI
 ppi_value = round((res_width**2 + res_height**2) ** 0.5 / screen_size, 2)
 st.caption(f"🔍 **Calculated PPI**: {ppi_value} based on resolution {res_width}x{res_height} and screen size {screen_size}")
 
