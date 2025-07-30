@@ -58,7 +58,7 @@ query = pd.DataFrame({
     "Ram": [ram],
     "Weight": [weight],
     "Touchscreen": [1 if touchscreen == "Yes" else 0],
-    "Ips": [1 if ips == "Yes" else 0],
+    "IPS": [1 if ips == "Yes" else 0],
     "ppi": [ppi],
     "Cpu_type": [cpu],
     "HDD": [hdd],
@@ -79,7 +79,7 @@ X_scaled[["Ram", "Weight", "ppi", "HDD", "SSD"]] = scaler.transform(
 
 # Reorder columns to match training
 expected_order = ['Company', 'TypeName', 'Ram', 'Weight', 'Cpu_type',
-                  'Touchscreen', 'Ips', 'ppi', 'HDD', 'SSD', 'Gpu_type', 'OS']
+                  'Touchscreen', 'IPS', 'ppi', 'HDD', 'SSD', 'Gpu_type', 'OS']
 X_scaled = X_scaled[expected_order]
 
 # Predict
