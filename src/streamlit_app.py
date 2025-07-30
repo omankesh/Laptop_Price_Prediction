@@ -2,21 +2,25 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import pickle
+import os
+
+# Set correct path to parent directory
+base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 # Load Models and Encoders
-with open("label_encoders.pkl", "rb") as f:
+with open(os.path.join(base_path, "label_encoders.pkl"), "rb") as f:
     label_encoders = pickle.load(f)
 
-with open("scaler.pkl", "rb") as f:
+with open(os.path.join(base_path, "scaler.pkl"), "rb") as f:
     scaler = pickle.load(f)
 
-with open("lightgbm_log_model.pkl", "rb") as f:
+with open(os.path.join(base_path, "lightgbm_log_model.pkl"), "rb") as f:
     lgb_model = pickle.load(f)
 
-with open("gradient_boosting_log_model.pkl", "rb") as f:
+with open(os.path.join(base_path, "gradient_boosting_log_model.pkl"), "rb") as f:
     gb_model = pickle.load(f)
 
-with open("xgboost_log_model.pkl", "rb") as f:
+with open(os.path.join(base_path, "xgboost_log_model.pkl"), "rb") as f:
     xgb_model = pickle.load(f)
 
 st.title("💻 Laptop Price Predictor")
@@ -54,7 +58,7 @@ if st.button("💰 Predict Laptop Price"):
     gpu_enc = label_encoders["Gpu_type"].transform([gpu])[0]
     os_enc = label_encoders["OS"].transform([os])[0]
 
-    # Final input features
+    # Final input features (only numeric for scaler)
     input_features = np.array([[ram, weight, ppi, hdd, ssd]])
     scaled_input = scaler.transform(input_features)
 
@@ -63,8 +67,8 @@ if st.button("💰 Predict Laptop Price"):
     log_pred_gb = gb_model.predict(scaled_input)[0]
     log_pred_xgb = xgb_model.predict(scaled_input)[0]
 
-    # Weighted average (You can adjust weights)
+    # Weighted average (can tune weights later)
     final_log_pred = (log_pred_lgb + log_pred_gb + log_pred_xgb) / 3
-    final_price = np.exp(final_log_pred)  # Reverse log
+    final_price = np.exp(final_log_pred)
 
     st.success(f"🤑 Predicted Laptop Price: ₹ {int(final_price):,}")
