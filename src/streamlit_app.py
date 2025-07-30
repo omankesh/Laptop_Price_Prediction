@@ -34,7 +34,7 @@ except FileNotFoundError as e:
 
 # Streamlit App UI
 st.set_page_config(page_title="Laptop Price Predictor", page_icon="💻")
-st.title("💻 Laptop Price Predictor")
+st.title("💻 Laptop Price Predictor (Ensemble Model)")
 st.markdown("Predict laptop prices using XGBoost and LightGBM models.")
 
 # User Input
@@ -54,7 +54,7 @@ os = st.selectbox('Operating System', label_encoders['OS'].classes_)
 st.markdown("### 📺 Display Details (PPI Auto Calculated)")
 screen_size = st.selectbox('Screen Size (inches)', [13.3, 14.0, 15.6, 16.0, 17.3])
 
-# ✅ FIXED: Resolution selection
+# Resolution options fix
 resolution_options = {
     'HD (1366x768)': (1366, 768),
     'Full HD (1920x1080)': (1920, 1080),
@@ -64,7 +64,7 @@ resolution_options = {
 selected_label = st.selectbox('Screen Resolution', list(resolution_options.keys()))
 res_width, res_height = resolution_options[selected_label]
 
-# Calculate PPI
+# PPI Calculation
 ppi_value = round((res_width**2 + res_height**2) ** 0.5 / screen_size, 2)
 st.caption(f"🔍 **Calculated PPI**: {ppi_value} based on resolution {res_width}x{res_height} and screen size {screen_size}")
 
@@ -89,8 +89,9 @@ input_df = pd.DataFrame([input_dict])
 for col in label_encoders:
     input_df[col] = label_encoders[col].transform(input_df[col])
 
-# Scale Numeric Features
-scaled_input = scaler.transform(input_df)
+# ✅ Scale only numeric columns as used in training
+numeric_input = input_df[['Ram', 'Weight', 'ppi', 'HDD', 'SSD']]
+scaled_input = scaler.transform(numeric_input)
 
 # Model Predictions (Log values)
 log_pred_xgb = xgb_model.predict(scaled_input)[0]
