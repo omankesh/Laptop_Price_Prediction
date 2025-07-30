@@ -32,80 +32,58 @@ except FileNotFoundError as e:
     st.error(f"❌ Error loading model/preprocessing files: {e}")
     st.stop()
 
-# Streamlit App UI
-st.set_page_config(page_title="Laptop Price Predictor", page_icon="💻")
-st.title("💻 Laptop Price Predictor (Ensemble Model)")
-st.markdown("Predict laptop prices using XGBoost and LightGBM models.")
+# UI Inputs
+company = st.selectbox("Company", options=label_encoders["Company"].classes_)
+typename = st.selectbox("Type", options=label_encoders["TypeName"].classes_)
+ram = st.selectbox("RAM (GB)", options=[4, 8, 12, 16, 24, 32, 64])
+weight = st.number_input("Weight (in kg)", value=2.0)
+touchscreen = st.selectbox("Touchscreen", ["No", "Yes"])
+ips = st.selectbox("IPS Display", ["No", "Yes"])
+screen_size = st.number_input("Screen Size (in inches)", value=15.6)
+resolution = st.selectbox("Screen Resolution", ["1920x1080", "1366x768", "1600x900", "3840x2160", "3200x1800"])
+cpu = st.selectbox("CPU Type", options=label_encoders["Cpu_type"].classes_)
+hdd = st.selectbox("HDD (in GB)", options=[0, 128, 256, 512, 1024, 2048])
+ssd = st.selectbox("SSD (in GB)", options=[0, 128, 256, 512, 1024])
+gpu = st.selectbox("GPU Type", options=label_encoders["Gpu_type"].classes_)
+os_type = st.selectbox("Operating System", options=label_encoders["OS"].classes_)
 
-# User Input
-company = st.selectbox('Brand (Company)', label_encoders['Company'].classes_)
-typename = st.selectbox('Laptop Type', label_encoders['TypeName'].classes_)
-ram = st.slider('RAM (GB)', 2, 64, step=2)
-weight = st.number_input('Weight (kg)', min_value=0.5, max_value=4.0, step=0.1)
-cpu_type = st.selectbox('CPU Type', label_encoders['Cpu_type'].classes_)
-touchscreen = st.radio('Touchscreen?', ['No', 'Yes'])
-ips = st.radio('IPS Display?', ['No', 'Yes'])
-hdd = st.selectbox('HDD (GB)', [0, 128, 256, 512, 1024, 2048])
-ssd = st.selectbox('SSD (GB)', [0, 128, 256, 512, 1024])
-gpu_type = st.selectbox('GPU Type', label_encoders['Gpu_type'].classes_)
-os = st.selectbox('Operating System', label_encoders['OS'].classes_)
+# Feature Engineering
+x_res, y_res = map(int, resolution.split('x'))
+ppi = ((x_res**2 + y_res**2) ** 0.5) / screen_size
 
-# Display Details
-st.markdown("### 📺 Display Details (PPI Auto Calculated)")
-screen_size = st.selectbox('Screen Size (inches)', [13.3, 14.0, 15.6, 16.0, 17.3])
+# Prepare input
+query = pd.DataFrame({
+    "Company": [company],
+    "TypeName": [typename],
+    "Ram": [ram],
+    "Weight": [weight],
+    "Touchscreen": [1 if touchscreen == "Yes" else 0],
+    "Ips": [1 if ips == "Yes" else 0],
+    "ppi": [ppi],
+    "Cpu_type": [cpu],
+    "HDD": [hdd],
+    "SSD": [ssd],
+    "Gpu_type": [gpu],
+    "OS": [os_type]
+})
 
-# ✅ FIXED: Resolution selection
-resolution_options = {
-    'HD (1366x768)': (1366, 768),
-    'Full HD (1920x1080)': (1920, 1080),
-    '2K (2560x1440)': (2560, 1440),
-    '4K (3840x2160)': (3840, 2160)
-}
-selected_label = st.selectbox('Screen Resolution', list(resolution_options.keys()))
-res_width, res_height = resolution_options[selected_label]
+# Label Encoding
+for col in ["Company", "TypeName", "Cpu_type", "Gpu_type", "OS"]:
+    le = label_encoders[col]
+    query[col] = le.transform(query[col])
 
-# Calculate PPI
-ppi_value = round((res_width**2 + res_height**2) ** 0.5 / screen_size, 2)
-st.caption(f"🔍 **Calculated PPI**: {ppi_value} based on resolution {res_width}x{res_height} and screen size {screen_size}")
+# Scale Numerical Features
+X_scaled = query.copy()
+X_scaled[["Ram", "Weight", "ppi", "HDD", "SSD"]] = scaler.transform(
+    query[["Ram", "Weight", "ppi", "HDD", "SSD"]])
 
-# Prepare Input Data
-input_dict = {
-    'Company': company,
-    'TypeName': typename,
-    'Ram': ram,
-    'Weight': weight,
-    'Cpu_type': cpu_type,
-    'Touchscreen': 1 if touchscreen == 'Yes' else 0,
-    'IPS': 1 if ips == 'Yes' else 0,
-    'ppi': ppi_value,
-    'HDD': hdd,
-    'SSD': ssd,
-    'Gpu_type': gpu_type,
-    'OS': os
-}
-
-# Create DataFrame and Apply Label Encoding
-input_df = pd.DataFrame([input_dict])
-for col in label_encoders:
-    input_df[col] = label_encoders[col].transform(input_df[col])
-
-# Scale Numeric Features
-scaled_input = scaler.transform(input_df)
-
-# Model Predictions (Log values)
-log_pred_xgb = xgb_model.predict(scaled_input)[0]
-log_pred_lgbm = lgbm_model.predict(scaled_input)[0]
-
-# Ensemble Prediction
-final_log_price = (
-    log_pred_xgb * weights['XGBoost'] +
-    log_pred_lgbm * weights['LightGBM']
-)
-final_price = np.exp(final_log_price)
-
-# Output
-st.subheader("📈 Predicted Laptop Price:")
-st.success(f"💰 ₹ {final_price:,.2f}")
-
-st.markdown("---")
-st.caption("Built with ❤️ using XGBoost and LightGBM models in an ensemble format.")
+# Predict
+model_choice = st.radio("Choose Model", ["Gradient Boosting", "LightGBM"])
+if st.button("Predict Price"):
+    if model_choice == "Gradient Boosting":
+        log_price = gb_model.predict(X_scaled)[0]
+    else:
+        log_price = lgb_model.predict(X_scaled)[0]
+    
+    predicted_price = np.exp(log_price)
+    st.success(f"Estimated Laptop Price: ₹{int(predicted_price)}")
